@@ -1,20 +1,213 @@
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-    <style>
-        .no-button {
-            pointer-events: none; /* Makes the button unclickable */
-        }
-        .no-button:hover {
-            /* Hide the button when hovered */
-            display: none;
-        }
-        .no-button:active {
-            /* Hide the button when touched on mobile */
-            display: none;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Be My Iftar? 🌙</title>
+
+  <style>
+    :root {
+      --bg1: #fff5e6;
+      --bg2: #ffd6a5;
+      --text: #1f1f1f;
+      --yes: #ff4d6d;
+      --no: #d9d9d9;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100svh;
+      display: grid;
+      place-items: center;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      background: linear-gradient(to bottom, var(--bg1), var(--bg2));
+      color: var(--text);
+      overflow: hidden;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+
+    .card {
+      width: min(520px, 92vw);
+      background: rgba(255, 255, 255, 0.75);
+      border: 1px solid rgba(0,0,0,0.06);
+      border-radius: 18px;
+      padding: 26px 18px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+      backdrop-filter: blur(10px);
+      text-align: center;
+    }
+
+    h1 {
+      margin: 0 0 14px;
+      font-size: clamp(26px, 5vw, 38px);
+      line-height: 1.15;
+    }
+
+    .sub {
+      margin: 0 0 22px;
+      font-size: clamp(14px, 3.4vw, 16px);
+      opacity: 0.9;
+    }
+
+    .btns {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+
+    button {
+      -webkit-tap-highlight-color: transparent;
+      padding: 14px 22px;
+      font-size: 18px;
+      border: 0;
+      border-radius: 14px;
+      cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+      box-shadow: 0 8px 18px rgba(0,0,0,0.12);
+      user-select: none;
+      touch-action: manipulation;
+      min-width: 140px;
+    }
+
+    button:active {
+      transform: scale(0.98);
+      box-shadow: 0 5px 12px rgba(0,0,0,0.12);
+    }
+
+    #yesBtn {
+      background: var(--yes);
+      color: white;
+    }
+
+    #noBtn {
+      background: var(--no);
+      color: #222;
+      position: fixed; /* makes it move anywhere on screen on mobile */
+      left: 50%;
+      top: calc(50% + 120px);
+      transform: translateX(-50%);
+      z-index: 5;
+    }
+
+    .moon {
+      position: fixed;
+      top: 18px;
+      right: 18px;
+      font-size: 34px;
+      animation: float 3s ease-in-out infinite;
+      z-index: 2;
+    }
+
+    @keyframes float {
+      0% { transform: translateY(0px); }
+      50% { transform: translateY(10px); }
+      100% { transform: translateY(0px); }
+    }
+
+    /* Success screen */
+    .success {
+      text-align: center;
+      width: min(640px, 92vw);
+      background: rgba(255, 255, 255, 0.8);
+      border: 1px solid rgba(0,0,0,0.06);
+      border-radius: 18px;
+      padding: 28px 18px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+      backdrop-filter: blur(10px);
+    }
+
+    .success h2 {
+      margin: 0 0 10px;
+      font-size: clamp(24px, 5vw, 40px);
+      line-height: 1.15;
+    }
+
+    .success p {
+      margin: 0;
+      font-size: clamp(15px, 3.6vw, 18px);
+      opacity: 0.95;
+    }
+
+    .time {
+      display: inline-block;
+      margin-top: 14px;
+      padding: 10px 14px;
+      border-radius: 12px;
+      background: rgba(0,0,0,0.06);
+      font-weight: 700;
+    }
+  </style>
 </head>
+
 <body>
-    <button class="no-button">NO</button>
+  <div class="moon">🌙✨</div>
+
+  <div class="card" id="card">
+    <h1>Will you be my Iftar this Wednesday, SK? ❤️‍🩹</h1>
+    <p class="sub">Pick one… wisely 😈</p>
+
+    <div class="btns">
+      <button id="yesBtn">YES ❤️</button>
+      <button id="noBtn">NO 🙈</button>
+    </div>
+  </div>
+
+  <script>
+    const yesBtn = document.getElementById("yesBtn");
+    const noBtn = document.getElementById("noBtn");
+    const card = document.getElementById("card");
+
+    // Start NO button in a reasonable spot on all screens
+    function placeNoInitial() {
+      const maxX = window.innerWidth - noBtn.offsetWidth;
+      const maxY = window.innerHeight - noBtn.offsetHeight;
+      const x = Math.max(12, Math.min(maxX - 12, (window.innerWidth / 2) - (noBtn.offsetWidth / 2)));
+      const y = Math.max(12, Math.min(maxY - 12, (window.innerHeight / 2) + 140));
+      noBtn.style.left = x + "px";
+      noBtn.style.top = y + "px";
+      noBtn.style.transform = "none";
+    }
+
+    // Move NO to a random place but keep it on-screen
+    function moveNo() {
+      const padding = 14;
+      const maxX = window.innerWidth - noBtn.offsetWidth - padding;
+      const maxY = window.innerHeight - noBtn.offsetHeight - padding;
+
+      const x = Math.floor(Math.random() * Math.max(1, maxX - padding)) + padding;
+      const y = Math.floor(Math.random() * Math.max(1, maxY - padding)) + padding;
+
+      noBtn.style.left = x + "px";
+      noBtn.style.top = y + "px";
+      noBtn.style.transform = "none";
+    }
+
+    // Mobile-friendly: move on touchstart and click
+    noBtn.addEventListener("mouseenter", moveNo);
+    noBtn.addEventListener("click", moveNo);
+    noBtn.addEventListener("touchstart", (e) => {
+      e.preventDefault(); // prevents accidental click
+      moveNo();
+    }, { passive: false });
+
+    // YES behavior
+    yesBtn.addEventListener("click", () => {
+      document.body.innerHTML = `
+        <div class="moon">🌙✨</div>
+        <div class="success">
+          <h2>Expected, Love you hehe ❤️‍🩹</h2>
+          <p>Will pick you up at</p>
+          <div class="time">05:00 PM</div>
+        </div>
+      `;
+    });
+
+    // Ensure it works after load + on screen rotation
+    window.addEventListener("load", placeNoInitial);
+    window.addEventListener("resize", placeNoInitial);
+  </script>
 </body>
 </html>
